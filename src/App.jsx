@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import CategorySidebar from './components/CategorySidebar';
 import TemplateList from './components/TemplateList';
 import TemplateEditor from './components/TemplateEditor';
@@ -13,6 +13,7 @@ function App() {
   const [selectedTemplate, setSelectedTemplate] = useState(initialTemplates[0]);
   const [templates, setTemplates] = useState(initialTemplates);
   const [sortMode, setSortMode] = useState('recent');
+  const editorRef = useRef(null);
 
   const filteredTemplates = useMemo(() => {
     let result = templates;
@@ -33,6 +34,9 @@ function App() {
     });
     return result;
   }, [activeCategory, searchQuery, templates, sortMode]);
+
+  const filteredTemplatesRef = useRef(filteredTemplates);
+  filteredTemplatesRef.current = filteredTemplates;
 
   const detectedVariables = useMemo(() => {
     if (!selectedTemplate) return [];
@@ -58,11 +62,12 @@ function App() {
   const handleDeleteTemplate = (templateId) => {
     setTemplates(prev => {
       const next = prev.filter(t => t.id !== templateId);
+      const remaining = filteredTemplatesRef.current.filter(t => t.id !== templateId);
       setSelectedTemplate(currentSelected => {
         if (currentSelected && currentSelected.id === templateId) {
-          return next.length > 0 ? next[0] : null;
+          return remaining.length > 0 ? remaining[0] : null;
         }
-        if (next.length === 0) {
+        if (remaining.length === 0) {
           return null;
         }
         return currentSelected;
@@ -71,12 +76,11 @@ function App() {
     });
   };
 
-  const handleInsertVariable = (variableKey) => {
-    setSelectedTemplate(prev => {
-      if (!prev) return prev;
-      return { ...prev, content: prev.content + variableKey };
-    });
-  };
+  const handleInsertVariable = useCallback((variableKey) => {
+    if (editorRef.current) {
+      editorRef.current.insertVariable(variableKey);
+    }
+  }, []);
 
   return (
     <div className="h-screen w-screen flex bg-gray-100 overflow-hidden">
@@ -99,6 +103,7 @@ function App() {
 
       <div className="flex-1 flex min-h-0">
         <TemplateEditor
+          ref={editorRef}
           key={selectedTemplate?.id}
           template={selectedTemplate}
           variables={variables}

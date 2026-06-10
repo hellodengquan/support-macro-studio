@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   Save, X, Eye, RotateCcw, Folder, Type, AlignLeft,
   Check, AlertCircle, Copy, Send, FileText, Inbox
@@ -22,7 +22,7 @@ function renderContentWithVariables(content) {
   });
 }
 
-function TemplateEditor({ template, variables, onSave, onCancel }) {
+const TemplateEditor = forwardRef(function TemplateEditor({ template, variables, onSave, onCancel }, ref) {
   const [title, setTitle] = useState(template?.title || '');
   const [category, setCategory] = useState(template?.category || 'greeting');
   const [content, setContent] = useState(template?.content || '');
@@ -61,6 +61,10 @@ function TemplateEditor({ template, variables, onSave, onCancel }) {
       setContent(content + variableKey);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    insertVariable,
+  }));
 
   const validateForm = () => {
     const newErrors = {};
@@ -328,6 +332,6 @@ function TemplateEditor({ template, variables, onSave, onCancel }) {
       </div>
     </div>
   );
-}
+});
 
 export default TemplateEditor;
