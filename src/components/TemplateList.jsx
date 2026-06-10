@@ -1,6 +1,23 @@
 import { Search, Star, Clock, Eye, Copy, Edit2, Trash2, ThumbsUp } from 'lucide-react';
 
-function TemplateList({ templates, searchQuery, onSearchChange, onSelectTemplate, selectedId }) {
+function TemplateList({
+  templates,
+  searchQuery,
+  onSearchChange,
+  onSelectTemplate,
+  selectedId,
+  sortMode,
+  onSortChange,
+  onDeleteTemplate,
+}) {
+  const handleDelete = (e, template) => {
+    e.stopPropagation();
+    const confirmed = window.confirm(`确定要删除模板「${template.title}」吗？此操作不可撤销。`);
+    if (confirmed) {
+      onDeleteTemplate(template.id);
+    }
+  };
+
   return (
     <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col h-full">
       <div className="p-4 border-b border-gray-200 bg-white">
@@ -17,8 +34,26 @@ function TemplateList({ templates, searchQuery, onSearchChange, onSelectTemplate
         <div className="flex items-center justify-between mt-3">
           <p className="text-xs text-gray-500">共 <span className="font-semibold text-gray-700">{templates.length}</span> 个模板</p>
           <div className="flex items-center gap-2 text-xs">
-            <button className="px-2 py-1 rounded-md bg-purple-50 text-purple-600 font-medium">最近使用</button>
-            <button className="px-2 py-1 rounded-md text-gray-500 hover:bg-gray-100">使用量</button>
+            <button
+              onClick={() => onSortChange('recent')}
+              className={`px-2 py-1 rounded-md font-medium transition-all ${
+                sortMode === 'recent'
+                  ? 'bg-purple-50 text-purple-600'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              最近使用
+            </button>
+            <button
+              onClick={() => onSortChange('usage')}
+              className={`px-2 py-1 rounded-md font-medium transition-all ${
+                sortMode === 'usage'
+                  ? 'bg-purple-50 text-purple-600'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              使用量
+            </button>
           </div>
         </div>
       </div>
@@ -68,15 +103,27 @@ function TemplateList({ templates, searchQuery, onSearchChange, onSelectTemplate
                   </span>
                 </div>
                 <div className={`flex items-center gap-1 mt-3 pt-3 border-t ${isSelected ? 'border-purple-100' : 'border-gray-100'}`}>
-                  <button className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigator.clipboard.writeText(template.content);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all"
+                  >
                     <Copy className="w-3.5 h-3.5" />
                     复制
                   </button>
-                  <button className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all">
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
+                  >
                     <Edit2 className="w-3.5 h-3.5" />
                     编辑
                   </button>
-                  <button className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-all">
+                  <button
+                    onClick={(e) => handleDelete(e, template)}
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
+                  >
                     <Trash2 className="w-3.5 h-3.5" />
                     删除
                   </button>

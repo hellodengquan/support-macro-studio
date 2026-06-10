@@ -12,6 +12,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(initialTemplates[0]);
   const [templates, setTemplates] = useState(initialTemplates);
+  const [sortMode, setSortMode] = useState('recent');
 
   const filteredTemplates = useMemo(() => {
     let result = templates;
@@ -24,8 +25,14 @@ function App() {
         t => t.title.toLowerCase().includes(query) || t.content.toLowerCase().includes(query)
       );
     }
+    result = [...result].sort((a, b) => {
+      if (sortMode === 'usage') {
+        return b.usageCount - a.usageCount;
+      }
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
     return result;
-  }, [activeCategory, searchQuery, templates]);
+  }, [activeCategory, searchQuery, templates, sortMode]);
 
   const detectedVariables = useMemo(() => {
     if (!selectedTemplate) return [];
@@ -33,10 +40,29 @@ function App() {
   }, [selectedTemplate, variables]);
 
   const handleSaveTemplate = (updatedTemplate) => {
-    setTemplates(prev => prev.map(t =>
-      t.id === updatedTemplate.id ? { ...updatedTemplate, updatedAt: new Date().toISOString().split('T')[0] } : t
-    ));
-    setSelectedTemplate(prev => prev.id === updatedTemplate.id ? { ...updatedTemplate, updatedAt: new Date().toISOString().split('T')[0] } : prev);
+    const today = new Date().toISOString().split('T')[0];
+    if (!updatedTemplate.id) {
+      const newId = Date.now();
+      const newTemplate = { ...updatedTemplate, id: newId, updatedAt: today, usageCount: 0, rating: 5.0 };
+      setTemplates(prev => prev.concat(newTemplate));
+      setSelectedTemplate(newTemplate);
+    } else {
+      const savedTemplate = { ...updatedTemplate, updatedAt: today };
+      setTemplates(prev => prev.map(t =>
+        t.id === updatedTemplate.id ? savedTemplate : t
+      ));
+      setSelectedTemplate(prev => prev && prev.id === updatedTemplate.id ? savedTemplate : prev);
+    }
+  };
+
+  const handleDeleteTemplate = (templateId) => {
+    setTemplates(prev => {
+      const next = prev.filter(t => t.id !== templateId);
+      if (next.length > 0 && selectedTemplate && selectedTemplate.id === templateId) {
+        setSelectedTemplate(next[0]);
+      }
+      return next;
+    });
   };
 
   const handleInsertVariable = (variableKey) => {
@@ -61,6 +87,9 @@ function App() {
         onSearchChange={setSearchQuery}
         onSelectTemplate={setSelectedTemplate}
         selectedId={selectedTemplate?.id}
+        sortMode={sortMode}
+        onSortChange={setSortMode}
+        onDeleteTemplate={handleDeleteTemplate}
       />
 
       <div className="flex-1 flex min-h-0">
