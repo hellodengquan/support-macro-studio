@@ -22,7 +22,7 @@ function renderContentWithVariables(content) {
   });
 }
 
-const TemplateEditor = forwardRef(function TemplateEditor({ template, variables, onSave, onCancel }, ref) {
+const TemplateEditor = forwardRef(function TemplateEditor({ template, variables, onSave, onCancel, onContentChange }, ref) {
   const [title, setTitle] = useState(template?.title || '');
   const [category, setCategory] = useState(template?.category || 'greeting');
   const [content, setContent] = useState(template?.content || '');
@@ -52,13 +52,20 @@ const TemplateEditor = forwardRef(function TemplateEditor({ template, variables,
       const end = textarea.selectionEnd;
       const newContent = content.substring(0, start) + variableKey + content.substring(end);
       setContent(newContent);
+      if (onContentChange) {
+        onContentChange(newContent);
+      }
       setTimeout(() => {
         textarea.focus();
         const pos = start + variableKey.length;
         textarea.setSelectionRange(pos, pos);
       }, 0);
     } else {
-      setContent(content + variableKey);
+      const newContent = content + variableKey;
+      setContent(newContent);
+      if (onContentChange) {
+        onContentChange(newContent);
+      }
     }
   };
 

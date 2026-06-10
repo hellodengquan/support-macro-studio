@@ -7,6 +7,26 @@ import StatsPanel from './components/StatsPanel';
 import FeedbackPanel from './components/FeedbackPanel';
 import { categories, variables, templates as initialTemplates, feedbackReasons } from './data/mockData';
 
+function filterAndSortTemplates(templates, activeCategory, searchQuery, sortMode) {
+  let result = templates;
+  if (activeCategory !== 'all') {
+    result = result.filter(t => t.category === activeCategory);
+  }
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase();
+    result = result.filter(
+      t => t.title.toLowerCase().includes(query) || t.content.toLowerCase().includes(query)
+    );
+  }
+  result = [...result].sort((a, b) => {
+    if (sortMode === 'usage') {
+      return b.usageCount - a.usageCount;
+    }
+    return new Date(b.updatedAt) - new Date(a.updatedAt);
+  });
+  return result;
+}
+
 function App() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,28 +35,10 @@ function App() {
   const [sortMode, setSortMode] = useState('recent');
   const editorRef = useRef(null);
 
-  const filteredTemplates = useMemo(() => {
-    let result = templates;
-    if (activeCategory !== 'all') {
-      result = result.filter(t => t.category === activeCategory);
-    }
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        t => t.title.toLowerCase().includes(query) || t.content.toLowerCase().includes(query)
-      );
-    }
-    result = [...result].sort((a, b) => {
-      if (sortMode === 'usage') {
-        return b.usageCount - a.usageCount;
-      }
-      return new Date(b.updatedAt) - new Date(a.updatedAt);
-    });
-    return result;
-  }, [activeCategory, searchQuery, templates, sortMode]);
-
-  const filteredTemplatesRef = useRef(filteredTemplates);
-  filteredTemplatesRef.current = filteredTemplates;
+  const filteredTemplates = useMemo(
+    () => filterAndSortTemplates(templates, activeCategory, searchQuery, sortMode),
+    [templates, activeCategory, searchQuery, sortMode]
+  );
 
   const detectedVariables = useMemo(() => {
     if (!selectedTemplate) return [];
@@ -62,15 +64,13 @@ function App() {
   const handleDeleteTemplate = (templateId) => {
     setTemplates(prev => {
       const next = prev.filter(t => t.id !== templateId);
-      const remaining = filteredTemplatesRef.current.filter(t => t.id !== templateId);
+      const nextFiltered = filterAndSortTemplates(next, activeCategory, searchQuery, sortMode);
       setSelectedTemplate(currentSelected => {
-        if (currentSelected && currentSelected.id === templateId) {
-          return remaining.length > 0 ? remaining[0] : null;
+        const stillExists = next.some(t => t.id === currentSelected?.id);
+        if (stillExists) {
+          return currentSelected;
         }
-        if (remaining.length === 0) {
-          return null;
-        }
-        return currentSelected;
+        return nextFiltered.length > 0 ? nextFiltered[0] : null;
       });
       return next;
     });
@@ -80,6 +80,10 @@ function App() {
     if (editorRef.current) {
       editorRef.current.insertVariable(variableKey);
     }
+  }, []);
+
+  const handleContentChange = useCallback((content) => {
+    setSelectedTemplate(prev => prev ? { ...prev, content } : prev);
   }, []);
 
   return (
@@ -108,6 +112,7 @@ function App() {
           template={selectedTemplate}
           variables={variables}
           onSave={handleSaveTemplate}
+          onContentChange={handleContentChange}
         />
         <div className="w-80 bg-gray-50 border-l border-gray-200 p-4 space-y-4 overflow-y-auto flex-shrink-0">
           <VariablePanel
