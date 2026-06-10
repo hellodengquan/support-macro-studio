@@ -58,19 +58,24 @@ function App() {
   const handleDeleteTemplate = (templateId) => {
     setTemplates(prev => {
       const next = prev.filter(t => t.id !== templateId);
-      if (next.length > 0 && selectedTemplate && selectedTemplate.id === templateId) {
-        setSelectedTemplate(next[0]);
-      }
+      setSelectedTemplate(currentSelected => {
+        if (currentSelected && currentSelected.id === templateId) {
+          return next.length > 0 ? next[0] : null;
+        }
+        if (next.length === 0) {
+          return null;
+        }
+        return currentSelected;
+      });
       return next;
     });
   };
 
   const handleInsertVariable = (variableKey) => {
-    if (!selectedTemplate) return;
-    const newContent = selectedTemplate.content + variableKey;
-    const updated = { ...selectedTemplate, content: newContent };
-    setSelectedTemplate(updated);
-    handleSaveTemplate(updated);
+    setSelectedTemplate(prev => {
+      if (!prev) return prev;
+      return { ...prev, content: prev.content + variableKey };
+    });
   };
 
   return (

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   Save, X, Eye, RotateCcw, Folder, Type, AlignLeft,
-  Check, AlertCircle, Copy, Send, FileText
+  Check, AlertCircle, Copy, Send, FileText, Inbox
 } from 'lucide-react';
 import { categories } from '../data/mockData';
 
@@ -106,6 +106,27 @@ function TemplateEditor({ template, variables, onSave, onCancel }) {
 
   const filteredCategories = categories.filter(c => c.id !== 'all');
   const contentLength = content.length;
+
+  if (!template) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center justify-center text-center max-w-sm px-6">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center mb-5">
+            <Inbox className="w-10 h-10 text-purple-500" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">
+            暂无模板
+          </h2>
+          <p className="text-sm text-gray-500 leading-relaxed mb-6">
+              当前模板列表为空或已全部删除。请从左侧列表选择一个模板，或点击「新建模板」按钮创建新的快捷回复。
+            </p>
+            <div className="text-xs text-gray-400 border border-dashed border-gray-300 rounded-xl px-5 py-4 bg-white/60">
+              提示：创建模板后，可通过变量库插入动态变量
+            </div>
+          </div>
+        </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col h-full bg-gray-50">
